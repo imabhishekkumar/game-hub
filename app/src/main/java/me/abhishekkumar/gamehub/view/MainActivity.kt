@@ -1,54 +1,62 @@
 package me.abhishekkumar.gamehub.view
 
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.google.gson.Gson
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.GridLayoutManager
+import kotlinx.android.synthetic.main.activity_main.*
 import me.abhishekkumar.gamehub.R
-import me.abhishekkumar.gamehub.model.GameData
-import me.abhishekkumar.gamehub.utills.RetrofitClient
-import okhttp3.MediaType
-import okhttp3.RequestBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.converter.scalars.ScalarsConverterFactory
+import me.abhishekkumar.gamehub.viewmodel.GamesViewModel
 
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var viewModel: GamesViewModel
+    private val gamesListAdapter = GamesListAdapter(arrayListOf())
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        viewModel = ViewModelProviders.of(this).get(GamesViewModel::class.java)
+        viewModel.refresh()
 
-        val retrofit: Retrofit = Retrofit.Builder()
-            .baseUrl("https://api-v3.igdb.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .addConverterFactory(ScalarsConverterFactory.create())
-            .build()
+        gameMainRV.apply {
+            layoutManager = GridLayoutManager(context, 2)
+            adapter = gamesListAdapter
+        }
 
-        var bodyText = "fields url,id,name,updated_at,summary,popularity,created_at,cover,category,platforms,rating,rating_count,release_dates,screenshots,similar_games; sort popularity desc;"
-        var body = RequestBody.create(MediaType.parse("text/plain"), bodyText);
-        val retrofitClient: RetrofitClient = retrofit.create(RetrofitClient::class.java)
-        val call = retrofitClient.getGames(body)
-        call.enqueue(object : Callback<List<GameData>> {
-            override fun onFailure(call: Call<List<GameData>>, t: Throwable) {
+        refreshLayout.setOnRefreshListener {
+            gameMainRV.visibility = View.GONE
+            listError.visibility = View.GONE
+            loadingView.visibility = View.VISIBLE
+            viewModel.refresh()
+            refreshLayout.isRefreshing = false
+        }
+        observeViewModel()
 
-                Toast.makeText(applicationContext, "Please try again later", Toast.LENGTH_SHORT)
-                    .show()
-                Log.d("Message Failure", t.message)
+    }
+
+    private fun observeViewModel() {
+        viewModel.games.observe(this, Observer { games ->
+            games?.let {
+                gameMainRV.visibility = View.VISIBLE
+                gamesListAdapter.updateGameList(games)
             }
+        })
 
-            override fun onResponse(
-                call: Call<List<GameData>>,
-                response: Response<List<GameData>>
-            ) {
-                if (response.isSuccessful) {
-                    Log.d("Message Successful", Gson().toJson(response.body()))
-                } else {
-                    Log.d("Message !Successful", Gson().toJson(response.errorBody()))
+        viewModel.gamesLoadError.observe(this, Observer { isError ->
+            isError?.let {
+                listError.visibility = if (it) View.VISIBLE else View.GONE
+            }
+        })
+
+        viewModel.loading.observe(this, Observer { isLoading ->
+            isLoading?.let {
+                loadingView.visibility = if (it) View.VISIBLE else View.GONE
+                if (it) {
+                    listError.visibility = View.GONE
+                    gameMainRV.visibility = View.GONE
                 }
             }
         })
