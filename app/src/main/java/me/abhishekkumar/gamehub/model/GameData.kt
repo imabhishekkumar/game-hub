@@ -2,13 +2,13 @@ package me.abhishekkumar.gamehub.model
 
 import com.google.gson.annotations.Expose
 
-class GameData(
+data class GameData(
     @Expose
     var id: Int,
     @Expose
     var category: Int,
     @Expose
-    var cover: Int,
+    var cover: GameCover,
     @Expose
     var created_at: Int,
     @Expose

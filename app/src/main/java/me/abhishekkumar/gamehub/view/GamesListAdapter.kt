@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.item_game.view.*
 import me.abhishekkumar.gamehub.R
 import me.abhishekkumar.gamehub.model.GameData
@@ -27,6 +28,13 @@ class GamesListAdapter(val gamesList: ArrayList<GameData>) :
 
     override fun onBindViewHolder(holder: GameViewHolder, position: Int) {
         holder.view.gameNameTV.text =gamesList[position].name
+        if(gamesList[position].cover.image_id!=null){
+            val imageLink = "https://images.igdb.com/igdb/image/upload/t_cover_big/"+gamesList[position].cover.image_id+".jpg"
+            Glide.with(holder.view.gameAvatarIV)
+                .load(imageLink)
+                .into(holder.view.gameAvatarIV)
+        }
+
     }
 
     class GameViewHolder(var view: View) : RecyclerView.ViewHolder(view)

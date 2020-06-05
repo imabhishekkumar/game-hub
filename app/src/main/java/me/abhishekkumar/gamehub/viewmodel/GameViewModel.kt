@@ -25,15 +25,15 @@ class GamesViewModel : ViewModel() {
     private fun fetchFromRemote() {
         loading.value = true
         var bodyText =
-            "fields url,id,name,updated_at,summary,popularity,created_at,cover,category,platforms,rating,rating_count,release_dates,screenshots,similar_games; sort popularity desc;"
+            "fields url,id,name,updated_at,summary,popularity,created_at,cover.image_id,category,platforms,rating,rating_count,release_dates,screenshots,similar_games; sort release_dates desc; limit 50;"
         var body = RequestBody.create(MediaType.parse("text/plain"), bodyText);
         disposable.add(
             gameService.getGames(body)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(object : DisposableSingleObserver<List<GameData>>() {
-                    override fun onSuccess(dogList: List<GameData>) {
-                        games.value = dogList
+                    override fun onSuccess(gameList: List<GameData>) {
+                        games.value = gameList
                         gamesLoadError.value = false
                         loading.value = false
                     }
